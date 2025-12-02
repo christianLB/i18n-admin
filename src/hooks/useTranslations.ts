@@ -6,6 +6,7 @@ import {
   buildKey,
   extractRowsFromNestedData,
   createEmptyValues,
+  getDepth,
 } from '../utils';
 
 interface UseTranslationsReturn {
@@ -17,18 +18,22 @@ interface UseTranslationsReturn {
   exportLinks: ExportLink[];
   searchQuery: string;
   collapsedKeys: Set<string>;
+  focusedKey: string | null;
   addRow: () => void;
   addChildRow: (parentIndex: number) => void;
   addChildParentRow: (parentIndex: number) => void;
   deleteRow: (index: number) => void;
   updateKey: (index: number, newKey: string) => void;
   updateValue: (index: number, language: string, value: string) => void;
+  moveRow: (index: number, newParentPath: string) => void;
   toggleLanguageVisibility: (lang: string) => void;
   generateExports: () => void;
   setSearchQuery: (query: string) => void;
   toggleCollapse: (key: string) => void;
   expandAll: () => void;
   collapseAll: () => void;
+  setFocusedKey: (key: string | null) => void;
+  getParentKeys: () => string[];
 }
 
 /**
@@ -47,6 +52,7 @@ export function useTranslations(
   const [exportLinks, setExportLinks] = useState<ExportLink[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(new Set());
+  const [focusedKey, setFocusedKey] = useState<string | null>(null);
 
   // Cleanup export links on unmount
   useEffect(() => {
@@ -273,6 +279,52 @@ export function useTranslations(
     setIsDirty(false);
   }, [rows, languages, exportLinks]);
 
+  // Move a row (and its children if parent) to a new parent
+  const moveRow = useCallback(
+    (filteredIndex: number, newParentPath: string) => {
+      const actualIndex = getActualIndex(filteredIndex);
+      setRows((prev) => {
+        const row = prev[actualIndex];
+        const oldKey = row.key;
+        const newKey = newParentPath ? `${newParentPath}.${row.name}` : row.name;
+
+        // If same location, do nothing
+        if (row.parentPath === newParentPath) return prev;
+
+        return prev.map((r) => {
+          if (r.key === oldKey) {
+            // The row being moved
+            return {
+              ...r,
+              key: newKey,
+              parentPath: newParentPath,
+              depth: getDepth(newKey),
+            };
+          }
+          if (r.parentPath === oldKey || r.parentPath.startsWith(oldKey + '.')) {
+            // Children of the row being moved - update their paths
+            const newChildKey = r.key.replace(oldKey, newKey);
+            const newChildParent = r.parentPath.replace(oldKey, newKey);
+            return {
+              ...r,
+              key: newChildKey,
+              parentPath: newChildParent,
+              depth: getDepth(newChildKey),
+            };
+          }
+          return r;
+        });
+      });
+      markDirty();
+    },
+    [markDirty, getActualIndex]
+  );
+
+  // Get all parent keys for the move modal
+  const getParentKeys = useCallback(() => {
+    return rows.filter((r) => r.isParent && r.key).map((r) => r.key);
+  }, [rows]);
+
   return {
     rows,
     filteredRows,
@@ -282,17 +334,21 @@ export function useTranslations(
     exportLinks,
     searchQuery,
     collapsedKeys,
+    focusedKey,
     addRow,
     addChildRow,
     addChildParentRow,
     deleteRow,
     updateKey,
     updateValue,
+    moveRow,
     toggleLanguageVisibility,
     generateExports,
     setSearchQuery,
     toggleCollapse,
     expandAll,
     collapseAll,
+    setFocusedKey,
+    getParentKeys,
   };
 }

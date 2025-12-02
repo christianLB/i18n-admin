@@ -5,6 +5,7 @@ import { getFlag } from '../../utils';
 export function TranslationTable({
   rows,
   languages,
+  allParentKeys,
   collapsedKeys,
   onKeyChange,
   onValueChange,
@@ -12,6 +13,8 @@ export function TranslationTable({
   onAddChildRow,
   onAddChildParentRow,
   onToggleCollapse,
+  onFocusRow,
+  onMoveRow,
 }: TranslationTableProps) {
   return (
     <div className="relative">
@@ -59,6 +62,7 @@ export function TranslationTable({
                 rowIndex={index}
                 allRows={rows}
                 languages={languages}
+                allParentKeys={allParentKeys}
                 isCollapsed={collapsedKeys.has(row.key)}
                 onKeyChange={(newKey) => onKeyChange(index, newKey)}
                 onValueChange={(lang, value) => onValueChange(index, lang, value)}
@@ -66,6 +70,8 @@ export function TranslationTable({
                 onAddChild={() => onAddChildRow(index)}
                 onAddChildParent={() => onAddChildParentRow(index)}
                 onToggleCollapse={() => onToggleCollapse(row.key)}
+                onFocus={() => onFocusRow(row.key)}
+                onMove={(newParentPath) => onMoveRow(index, newParentPath)}
               />
             ))}
           </tbody>

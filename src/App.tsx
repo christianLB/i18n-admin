@@ -16,18 +16,22 @@ function App() {
     exportLinks,
     searchQuery,
     collapsedKeys,
+    focusedKey,
     addRow,
     addChildRow,
     addChildParentRow,
     deleteRow,
     updateKey,
     updateValue,
+    moveRow,
     toggleLanguageVisibility,
     generateExports,
     setSearchQuery,
     toggleCollapse,
     expandAll,
     collapseAll,
+    setFocusedKey,
+    getParentKeys,
   } = useTranslations(initialLocales);
 
   const [toast, setToast] = useState<{
@@ -62,6 +66,7 @@ function App() {
           languages={languages}
           visibleLanguages={visibleLanguages}
           searchQuery={searchQuery}
+          focusedKey={focusedKey}
           onToggleLanguage={toggleLanguageVisibility}
           onSearchChange={setSearchQuery}
           onExpandAll={expandAll}
@@ -87,6 +92,7 @@ function App() {
           <TranslationTable
             rows={filteredRows}
             languages={visibleLanguages}
+            allParentKeys={getParentKeys()}
             collapsedKeys={collapsedKeys}
             onKeyChange={updateKey}
             onValueChange={updateValue}
@@ -94,6 +100,8 @@ function App() {
             onAddChildRow={addChildRow}
             onAddChildParentRow={addChildParentRow}
             onToggleCollapse={toggleCollapse}
+            onFocusRow={setFocusedKey}
+            onMoveRow={moveRow}
           />
         )}
 

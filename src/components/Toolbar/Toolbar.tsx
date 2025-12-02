@@ -8,6 +8,7 @@ export function Toolbar({
   languages,
   visibleLanguages,
   searchQuery,
+  focusedKey,
   onToggleLanguage,
   onSearchChange,
   onExpandAll,
@@ -75,6 +76,12 @@ export function Toolbar({
             </button>
           </div>
         </div>
+
+        {focusedKey && (
+          <div className="text-sm text-gray-500 font-mono bg-gray-100 px-3 py-1 rounded truncate max-w-xs" title={focusedKey}>
+            📍 {focusedKey}
+          </div>
+        )}
 
         {isDirty && (
           <span className="text-sm text-red-600 font-medium" role="status" aria-live="polite">

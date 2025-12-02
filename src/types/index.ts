@@ -47,6 +47,7 @@ export interface TranslationRowProps {
   rowIndex: number;
   allRows: TranslationRow[];
   languages: string[];
+  allParentKeys: string[];
   isCollapsed: boolean;
   onKeyChange: (newKey: string) => void;
   onValueChange: (language: string, value: string) => void;
@@ -54,6 +55,8 @@ export interface TranslationRowProps {
   onAddChild: () => void;
   onAddChildParent: () => void;
   onToggleCollapse: () => void;
+  onFocus: () => void;
+  onMove: (newParentPath: string) => void;
 }
 
 /**
@@ -62,6 +65,7 @@ export interface TranslationRowProps {
 export interface TranslationTableProps {
   rows: TranslationRow[];
   languages: string[];
+  allParentKeys: string[];
   collapsedKeys: Set<string>;
   onKeyChange: (index: number, newKey: string) => void;
   onValueChange: (index: number, language: string, value: string) => void;
@@ -69,6 +73,8 @@ export interface TranslationTableProps {
   onAddChildRow: (index: number) => void;
   onAddChildParentRow: (index: number) => void;
   onToggleCollapse: (key: string) => void;
+  onFocusRow: (key: string) => void;
+  onMoveRow: (index: number, newParentPath: string) => void;
 }
 
 /**
@@ -81,6 +87,7 @@ export interface ToolbarProps {
   languages: string[];
   visibleLanguages: string[];
   searchQuery: string;
+  focusedKey: string | null;
   onToggleLanguage: (lang: string) => void;
   onSearchChange: (query: string) => void;
   onExpandAll: () => void;

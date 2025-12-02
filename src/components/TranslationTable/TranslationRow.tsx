@@ -1,11 +1,15 @@
+import { useState, useMemo } from 'react';
 import type { TranslationRowProps } from '../../types';
 import { getRowError } from '../../utils';
+import { MoveKeyModal } from '../MoveKeyModal';
+import { SnippetModal } from '../SnippetModal';
 
 export function TranslationRow({
   row,
   rowIndex,
   allRows,
   languages,
+  allParentKeys,
   isCollapsed,
   onKeyChange,
   onValueChange,
@@ -13,10 +17,34 @@ export function TranslationRow({
   onAddChild,
   onAddChildParent,
   onToggleCollapse,
+  onFocus,
+  onMove,
 }: TranslationRowProps) {
+  const [copied, setCopied] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [showSnippetModal, setShowSnippetModal] = useState(false);
   const indentPx = row.depth * 16; // 16px per level
+
+  // Get descendant leaf keys for snippet generation (only for parents)
+  const descendantLeafKeys = useMemo(() => {
+    if (!row.isParent) return [];
+    return allRows
+      .filter(
+        (r) =>
+          !r.isParent &&
+          r.key &&
+          (r.parentPath === row.key || r.parentPath.startsWith(row.key + '.'))
+      )
+      .map((r) => r.key);
+  }, [row.isParent, row.key, allRows]);
   const keyError = getRowError(row, allRows, rowIndex);
   const hasKeyError = keyError !== null;
+
+  const handleCopyPath = async () => {
+    await navigator.clipboard.writeText(row.key);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
 
   const handleDelete = () => {
     const message = row.isParent
@@ -55,6 +83,7 @@ export function TranslationRow({
                 type="text"
                 value={row.name}
                 onChange={(e) => onKeyChange(e.target.value)}
+                onFocus={onFocus}
                 className={`${keyInputBaseClass} ${keyInputValidClass} font-semibold`}
                 placeholder="parent-key"
               />
@@ -92,6 +121,30 @@ export function TranslationRow({
               🔤
             </button>
             <button
+              onClick={() => setShowSnippetModal(true)}
+              className="px-2 py-1 text-xs hover:bg-indigo-50 rounded transition-colors font-mono"
+              aria-label="Generate code snippet"
+              title="Code snippet"
+            >
+              &lt;/&gt;
+            </button>
+            <button
+              onClick={handleCopyPath}
+              className="px-2 py-1 text-xs hover:bg-blue-50 rounded transition-colors"
+              aria-label="Copy path"
+              title="Copy path"
+            >
+              {copied ? '✓' : '📋'}
+            </button>
+            <button
+              onClick={() => setShowMoveModal(true)}
+              className="px-2 py-1 text-xs hover:bg-purple-50 rounded transition-colors"
+              aria-label="Move to another location"
+              title="Move"
+            >
+              ↗️
+            </button>
+            <button
               onClick={handleDelete}
               className="px-2 py-1 text-xs hover:bg-red-50 rounded transition-colors"
               aria-label="Delete folder"
@@ -101,6 +154,24 @@ export function TranslationRow({
             </button>
           </div>
         </td>
+
+        {showMoveModal && (
+          <MoveKeyModal
+            currentKey={row.key}
+            currentParentPath={row.parentPath}
+            allParents={allParentKeys}
+            onMove={onMove}
+            onClose={() => setShowMoveModal(false)}
+          />
+        )}
+
+        {showSnippetModal && (
+          <SnippetModal
+            parentKey={row.key}
+            childKeys={descendantLeafKeys}
+            onClose={() => setShowSnippetModal(false)}
+          />
+        )}
       </tr>
     );
   }
@@ -115,6 +186,7 @@ export function TranslationRow({
             type="text"
             value={row.name}
             onChange={(e) => onKeyChange(e.target.value)}
+            onFocus={onFocus}
             className={`${keyInputBaseClass} ${keyInputValidClass}`}
             placeholder="key"
           />
@@ -135,6 +207,7 @@ export function TranslationRow({
               type="text"
               value={value}
               onChange={(e) => onValueChange(lang, e.target.value)}
+              onFocus={onFocus}
               className={`w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 isMissing
                   ? 'bg-red-50 border-red-300 placeholder-red-400'
@@ -146,17 +219,45 @@ export function TranslationRow({
         );
       })}
 
-      {/* Actions cell - only delete button for leafs */}
+      {/* Actions cell - copy, move and delete buttons for leafs */}
       <td className="border border-gray-300 p-1 text-center">
-        <button
-          onClick={handleDelete}
-          className="px-2 py-1 text-sm hover:bg-red-50 rounded transition-colors"
-          aria-label="Delete key"
-          title="Delete key"
-        >
-          🗑
-        </button>
+        <div className="flex gap-1 justify-center">
+          <button
+            onClick={handleCopyPath}
+            className="px-2 py-1 text-xs hover:bg-blue-50 rounded transition-colors"
+            aria-label="Copy path"
+            title="Copy path"
+          >
+            {copied ? '✓' : '📋'}
+          </button>
+          <button
+            onClick={() => setShowMoveModal(true)}
+            className="px-2 py-1 text-xs hover:bg-purple-50 rounded transition-colors"
+            aria-label="Move to another location"
+            title="Move"
+          >
+            ↗️
+          </button>
+          <button
+            onClick={handleDelete}
+            className="px-2 py-1 text-sm hover:bg-red-50 rounded transition-colors"
+            aria-label="Delete key"
+            title="Delete key"
+          >
+            🗑
+          </button>
+        </div>
       </td>
+
+      {showMoveModal && (
+        <MoveKeyModal
+          currentKey={row.key}
+          currentParentPath={row.parentPath}
+          allParents={allParentKeys}
+          onMove={onMove}
+          onClose={() => setShowMoveModal(false)}
+        />
+      )}
     </tr>
   );
 }
